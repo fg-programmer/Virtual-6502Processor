@@ -9,7 +9,9 @@
     },
 
     "include": [
-        "src/**/*"
+        "src/**/*",
+         "hardware/**/*",
+          "imp/*"
     ],
     "exclude": [
       "./node_modules"
