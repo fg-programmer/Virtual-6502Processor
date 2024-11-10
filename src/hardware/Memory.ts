@@ -57,31 +57,33 @@ export class Memory extends Hardware implements ClockListener {
         }
     }
 
-    // Display the contents of memory from address 0x00 to 0x14 (or another range)
-    public displayMemory(start: number = 0x00, end: number = 0x14): void {
+    // Read from memory at the location in the MAR and update the MDR
+    public read(): void {
+        if (this.mar >= 0 && this.mar < this.memory.length) {
+            this.mdr = this.memory[this.mar];
+            this.log(`Read from memory - MAR: ${Hardware.hexLog(this.mar, 4)}, MDR: ${this.mdr}`);
+        } else {
+            this.log(`Read failed - Invalid MAR value: ${Hardware.hexLog(this.mar, 4)}`);
+        }
+    }
+
+    // Write the contents of the MDR to memory at the location indicated by the MAR
+    public write(): void {
+        if (this.mar >= 0 && this.mar < this.memory.length) {
+            this.memory[this.mar] = this.mdr;
+            this.log(`Write to memory - MAR: ${Hardware.hexLog(this.mar, 4)}, Data: ${this.mdr}`);
+        } else {
+            this.log(`Write failed - Invalid MAR value: ${Hardware.hexLog(this.mar, 4)}`);
+        }
+    }
+
+    // Display the contents of memory from address 0x00 to 0x11
+    public displayMemory(start: number = 0x00, end: number = 0x11): void {
         for (let i = start; i <= end; i++) {
             let hexAddress = Hardware.hexLog(i, 4); // Convert the address to hex
             let value = this.memory[i] || 'ERR [hexValue conversion]: number undefined'; // Handle undefined values
-            this.log(`Address: ${hexAddress} Contains Value: ${value}`); // Log the memory dump
-        }
-    }
-
-    // Write a value to memory at a specific address
-    public writeMemory(address: number, value: string): void {
-        if (address < this.memory.length) {
-            this.memory[address] = value.padStart(2, '0'); // Pad the value to ensure it's 2 hex digits
-        } else {
-            this.log(`Attempted to write to invalid memory address: ${Hardware.hexLog(address, 4)}`);
-        }
-    }
-
-    // Read the value from memory at a specific address
-    public readMemory(address: number): string {
-        if (address < this.memory.length) {
-            return this.memory[address]; // Return the value at the given memory address
-        } else {
-            this.log(`Attempted to read from invalid memory address: ${Hardware.hexLog(address, 4)}`);
-            return 'ERR';
+            this.log(`Address: ${hexAddress} Contains Value: ${value}`);
         }
     }
 }
+
