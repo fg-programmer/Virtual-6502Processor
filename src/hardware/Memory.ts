@@ -1,5 +1,4 @@
 // hardware/Memory.ts
-// hardware/Memory.ts
 import { Hardware } from './Hardware';
 import { ClockListener } from './imp/ClockListener';
 
