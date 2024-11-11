@@ -41,4 +41,49 @@ export class MMU extends Hardware {
             this.memory.write();
         }
 
+        // Function to write a static program into memory
+        public writeImmediate(): void {
+        const program = [
+            { address: 0x0000, data: 'A9' },
+            { address: 0x0001, data: '0D' },
+            { address: 0x0002, data: 'A9' },
+            { address: 0x0003, data: '1D' },
+            { address: 0x0004, data: 'A9' },
+            { address: 0x0005, data: '2D' },
+            { address: 0x0006, data: 'A9' },
+            { address: 0x0007, data: '3F' },
+            { address: 0x0008, data: 'A9' },
+            { address: 0x0009, data: 'FF' },
+            { address: 0x000A, data: '00' },
+            { address: 0x000B, data: '00' },
+            { address: 0x000C, data: '00' },
+            { address: 0x000D, data: '00' },
+            { address: 0x000E, data: '00' },
+            { address: 0x000F, data: '00' }
+        ];
+        
+        for (let entry of program) {
+            this.setMAR(entry.address);
+            this.setMDR(entry.data);
+            this.write();
+        }
+        this.memoryDump(0x0000, 0x000F); // Call to dump memory content after program load
+    }
+
+    // Memory dump method to display memory content from start to end address
+    private memoryDump(startAddress: number, endAddress: number): void {
+        this.log('Memory Dump: Debug');
+        this.log('--------------------------------------');
+
+        for (let addr = startAddress; addr <= endAddress; addr++) {
+            this.setMAR(addr);
+            this.memory.read();
+            const value = this.memory.getMDR();
+            this.log(`Addr ${Hardware.hexLog(addr, 4)}: | ${value}`);
+        }
+        this.log('--------------------------------------');
+        this.log('Memory Dump: Complete');
+    }
+    
+
 }
