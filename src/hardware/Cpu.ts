@@ -96,45 +96,55 @@ export class CPU extends Hardware {
                 break;
     
             case 0x8A: // TXA
-                this.log('Decoded TXA');
-                this.currentStep++; 
+                this.accumulator = this.xRegist;
+                this.updateZeroFlag(this.accumulator);
                 break;
-    
+                
             case 0x98: // TYA
-                this.log('Decoded TYA');
-                this.currentStep++; 
+                this.accumulator = this.yRegist;
+                this.updateZeroFlag(this.accumulator);
                 break;
     
             case 0x6D: // ADC $<low-byte> $<high-byte>
-                this.log('Decoded ADC (Absolute)');
-                this.currentStep++; 
+                const adcAddr = this.fetchAddress();
+                this.mmu.setMAR(adcAddr);
+                this.mmu.read();
+                const value = parseInt(this.mmu.getMDR(), 16);
+                this.accumulator = (this.accumulator + value) & 0xFF;
+                this.updateZeroFlag(this.accumulator);
                 break;
-    
+
             case 0xA2: // LDX #<constant>
-                this.log('Decoded LDX (Immediate)');
-                this.currentStep++; 
+                this.xRegist = this.fetchByte();
+                this.updateZeroFlag(this.xRegist);
                 break;
     
             case 0xAE: // LDX $<low-byte> $<high-byte>
-                this.log('Decoded LDX (Absolute)');
-                this.currentStep++; 
+                const ldxAddr = this.fetchAddress();
+                this.mmu.setMAR(ldxAddr);
+                this.mmu.read();
+                this.xRegist = parseInt(this.mmu.getMDR(), 16);
+                this.updateZeroFlag(this.xRegist);
                 break;
-    
+
             case 0xAA: // TAX
-                this.log('Decoded TAX');
-                this.currentStep++; 
+                this.xRegist = this.accumulator;
+                this.updateZeroFlag(this.xRegist);
                 break;
-    
+
             case 0xA0: // LDY #<constant>
-                this.log('Decoded LDY (Immediate)');
-                this.currentStep++; 
+                this.yRegist = this.fetchByte();
+                this.updateZeroFlag(this.yRegist);
                 break;
     
             case 0xAC: // LDY $<low-byte> $<high-byte>
-                this.log('Decoded LDY (Absolute)');
-                this.currentStep++; 
+                const ldyAddr = this.fetchAddress();
+                this.mmu.setMAR(ldyAddr);
+                this.mmu.read();
+                this.yRegist = parseInt(this.mmu.getMDR(), 16);
+                this.updateZeroFlag(this.yRegist);
                 break;
-    
+
             case 0xA8: // TAY
                 this.log('Decoded TAY');
                 this.currentStep++; 
