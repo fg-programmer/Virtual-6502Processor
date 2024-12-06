@@ -63,6 +63,43 @@ export class CPU extends Hardware {
         this.currentStep++;
     }
 
+        // Execute System Calls (SYS)
+        private executeSysCall(): void {
+            switch (this.xRegist) {
+                case 0x01: // Print the integer in Y register
+                    this.log(`SYS Call: Print integer ${this.yRegist}`);
+                    break;
+                case 0x02: 
+                    const addr = this.yRegist;
+                    this.log(`SYS Call: Print string from address ${Hardware.hexLog(addr, 4)}`);
+                    this.StringFromMemory(addr);
+                    break;
+                case 0x03: 
+                    const strAddr = this.fetchAddress();
+                    this.log(`SYS Call: Print string from operand address ${Hardware.hexLog(strAddr, 4)}`);
+                    this.StringFromMemory(strAddr);
+                    break;
+                default:
+                    this.log(`SYS Call: Unrecognized SYS code ${Hardware.hexLog(this.xRegist, 2)}`);
+                    break;
+            }
+        }
+
+        private StringFromMemory(addr: number): void {
+            let str = '';
+            while (true) {
+                this.mmu.setMAR(addr++);
+                this.mmu.read();
+                const charCode = parseInt(this.mmu.getMDR(), 16);
+                if (charCode === 0x00) break;
+                str += String.fromCharCode(charCode);
+            }
+            this.log(`Printed String: "${str}"`);
+        }
+    
+    
+    
+
     private decode(): void {
         this.log(`Decode: Opcode=${Hardware.hexLog(this.currentOpcode, 2)}`);
         switch (this.currentOpcode) {
@@ -146,34 +183,41 @@ export class CPU extends Hardware {
                 break;
 
             case 0xA8: // TAY
-                this.log('Decoded TAY');
-                this.currentStep++; 
+                this.yRegist = this.accumulator;
+                this.updateZeroFlag(this.yRegist);
                 break;
     
     
             case 0xEC: // CPX $<low-byte> $<high-byte>
-                this.log('Decoded CPX (Absolute)');
-                this.currentStep++; 
-                break;
-    
+            const cpxAddr = this.fetchAddress();
+                this.mmu.setMAR(cpxAddr);
+                this.mmu.read();
+                const compVal = parseInt(this.mmu.getMDR(), 16);
+                this.updateZeroFlag(this.xRegist === compVal ? 0 : 1);
+            break;
+
             case 0xD0: // BNE <offset>
-                this.log('Decoded BNE');
-                this.currentStep++; 
+                const offset = this.fetchByte();
+                if (!this.zeroFlag) {
+                    this.pCounter = (this.pCounter + (offset < 0x80 ? offset : offset - 0x100)) & 0xFFFF;
+                }
                 break;
-    
+
             case 0xEE: // INC $<low-byte> $<high-byte>
-                this.log('Decoded INC (Absolute)');
-                this.currentStep++; 
+                const incAddy = this.fetchAddress();
+                this.mmu.setMAR(incAddy);
+                this.mmu.read();
+                const incValue = parseInt(this.mmu.getMDR(), 16);
+                this.mmu.setMDR(Hardware.hexLog((incValue + 1) & 0xFF, 2));
+                this.mmu.write();
                 break;
-    
+
             case 0xFF: // SYS
-                this.log('Decoded SYS');
-                this.currentStep++; 
+                this.executeSysCall();
                 break;
-    
+
             case 0x00: // BRK
-                this.log('Decoded BRK');
-                this.currentStep++; 
+                this.log('BRK: Program stopped');
                 break;
     
             default: // Unrecognized opcode
