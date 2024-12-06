@@ -10,6 +10,7 @@ export class CPU extends Hardware {
     private yRegist: number = 0x00; // Y
     private instRegister: number = 0x00; // IR
     private zeroFlag: boolean = false; // Z flag
+    private carryFlag: number = 0; // C flag (0 or 1)
 
     private currentStep: number = 0; // Current pipeline step
     private currentOpcode: number | null = null; // Current opcode being executed
@@ -29,7 +30,7 @@ export class CPU extends Hardware {
 
     // Increment the PC
     private incrementPC(): void {
-        this.pCounter = (this.pCounter + 1) & 0xFFFF; // Wraps at 16-bit boundary
+        this.pCounter = (this.pCounter + 1) & 0xFFFF; 
     }
 
 
@@ -227,23 +228,169 @@ export class CPU extends Hardware {
         }
     }
     private execute(): void {
-        if (this.currentOpcode === 0xEE) { 
-            this.mmu.read(); // Get data from memory
-            this.mmu.pulse();
-            const data = parseInt(this.mmu.getMDR(), 16);
-            const incremented = (data + 1) & 0xFF; // Increment 
-            this.mmu.setMDR(Hardware.hexLog(incremented, 2));
-            this.mmu.write();
-            this.currentStep++; // Move to writeBack
+        switch (this.currentOpcode) {
+            case 0xA9: // LDA #<constant>
+                // Immediate value already fetched during decode; nothing to do.
+                this.log("Execute: LDA Immediate - No additional execution needed");
+                break;
+    
+            case 0xAD: // LDA $<low-byte> $<high-byte>
+                this.log("Execute: LDA Absolute - No additional execution needed");
+                break;
+    
+            case 0x8D: // STA $<low-byte> $<high-byte>
+                this.log("Execute: STA Absolute - No additional execution needed");
+                break;
+    
+            case 0xA2: // LDX #<constant>
+            case 0xAE: // LDX $<low-byte> $<high-byte>
+                this.log("Execute: LDX - No additional execution needed");
+                break;
+    
+            case 0x8A: // TXA
+                this.log("Execute: TXA - No additional execution needed");
+                break;
+    
+            case 0x98: // TYA
+                this.log("Execute: TYA - No additional execution needed");
+                break;
+    
+            case 0x6D: // ADC $<low-byte> $<high-byte>
+                this.log("Execute: ADC - No additional execution needed");
+                break;
+    
+            case 0xAA: // TAX
+                this.log("Execute: TAX - No additional execution needed");
+                break;
+    
+            case 0xA0: // LDY #<constant>
+            case 0xAC: // LDY $<low-byte> $<high-byte>
+                this.log("Execute: LDY - No additional execution needed");
+                break;
+    
+            case 0xA8: // TAY
+                this.log("Execute: TAY - No additional execution needed");
+                break;
+    
+            case 0xEC: // CPX $<low-byte> $<high-byte>
+                this.log("Execute: CPX - No additional execution needed");
+                break;
+    
+            case 0xD0: // BNE <offset>
+                // Conditional branch logic already applied during decode.
+                this.log("Execute: BNE - No additional execution needed");
+                break;
+
+            case 0x6D: // ADC $<low-byte> $<high-byte>
+                const fetchedValue = parseInt(this.mmu.getMDR(), 16); // Value from memory
+                const result = this.accumulator + fetchedValue + this.carryFlag; // Carry is numeric
+
+                this.accumulator = result & 0xFF; // Wrap to 8-bit
+                this.carryFlag = (result > 0xFF) ? 1 : 0; // Update carry as 1 or 0
+                this.updateZeroFlag(this.accumulator); // Update zero flag
+
+                this.log(
+                `ADC: Fetched=${Hardware.hexLog(fetchedValue, 2)}, CarryIn=${this.carryFlag}, ` +
+                `Result=${Hardware.hexLog(this.accumulator, 2)}, CarryOut=${this.carryFlag}`
+                );
+                break;
+
+    
+            case 0xEE: // INC $<low-byte> $<high-byte>
+                // Memory read for increment completed in decode; now increment the value.
+                const data = parseInt(this.mmu.getMDR(), 16);
+                const incremented = (data + 1) & 0xFF; // Increment value with wrapping.
+                this.mmu.setMDR(Hardware.hexLog(incremented, 2));
+                this.mmu.write(); // Write back incremented value.
+                this.log(`Execute: INC - Incremented value to ${Hardware.hexLog(incremented, 2)}`);
+                break;
+    
+            case 0xFF: // SYS
+                // System call execution was performed during decode.
+                this.log("Execute: SYS - No additional execution needed");
+                break;
+    
+            case 0x00: // BRK
+                // Stop instruction execution; handled during decode.
+                this.log("Execute: BRK - No additional execution needed");
+                break;
+    
+            default: // Unrecognized opcode
+                this.log(`Execute: Unrecognized Opcode - No execution performed`);
+                break;
         }
-    }    
-    private writeBack(): void {
-        if (this.currentOpcode === 0xEE) { // INC
-            this.mmu.pulse(); // Write operation completes
-            this.log('WriteBack done');
-        }
-        this.currentStep++; // Move to interruptCheck
+        this.currentStep++; // Proceed to the next pipeline step (writeBack or interruptCheck).
     }
+
+
+    private writeBack(): void {
+            switch (this.currentOpcode) {
+                case 0xA9: // LDA #<constant>
+                case 0xAD: // LDA $<low-byte> $<high-byte>
+                    // Accumulator is already updated in decode; nothing further to write back.
+                    this.log("WriteBack: LDA - No additional write-back needed");
+                    break;
+        
+                case 0x8D: // STA $<low-byte> $<high-byte>
+                    this.log("WriteBack: STA - No additional write-back needed");
+                    break;
+        
+                case 0xA2: // LDX #<constant>
+                case 0xAE: // LDX $<low-byte> $<high-byte>
+                    this.log("WriteBack: LDX - No additional write-back needed");
+                    break;
+        
+                case 0x8A: // TXA
+                    this.log("WriteBack: TXA - No additional write-back needed");
+                    break;
+        
+                case 0x98: // TYA
+                    this.log("WriteBack: TYA - No additional write-back needed");
+                    break;
+        
+                case 0x6D: // ADC $<low-byte> $<high-byte>
+                    this.log("WriteBack: ADC - No additional write-back needed");
+                    break;
+        
+                case 0xAA: // TAX
+                    this.log("WriteBack: TAX - No additional write-back needed");
+                    break;
+        
+                case 0xA0: // LDY #<constant>
+                case 0xAC: // LDY $<low-byte> $<high-byte>
+                    this.log("WriteBack: LDY - No additional write-back needed");
+                    break;
+        
+                case 0xA8: // TAY
+                    this.log("WriteBack: TAY - No additional write-back needed");
+                    break;
+        
+                case 0xEC: // CPX $<low-byte> $<high-byte>
+                    this.log("WriteBack: CPX - No additional write-back needed");
+                    break;
+        
+                case 0xD0: // BNE <offset>
+                    this.log("WriteBack: BNE - No additional write-back needed");
+                    break;
+        
+                case 0xEE: // INC $<low-byte> $<high-byte>
+                    this.log("WriteBack: INC - No additional write-back needed");
+                    break;
+        
+                case 0xFF: // SYS
+                    this.log("WriteBack: SYS - No additional write-back needed");
+                    break;
+        
+                case 0x00: // BRK
+                    this.log("WriteBack: BRK - No additional write-back needed");
+                    break;
+        
+                default: // Unrecognized opcode
+                    this.log("WriteBack: Unrecognized Opcode - No write-back performed");
+                    break;
+            }
+            this.currentStep = 0; // Reset the pipeline for the next instruction.
+        }
     private interruptCheck(): void {
         this.log('Interrupt check ');
         this.currentStep = 0; // Return to fetch

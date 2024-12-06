@@ -1,0 +1,13 @@
+class InterruptController extends Hardware {
+    private devices: Interrupt[] = []; // Registered interrupt-generating devices
+    private interruptQueue: Interrupt[] = []; // Active interrupts waiting to be processed
+
+    constructor() {
+        super("InterruptController");
+    }
+
+    // Register an interrupt-generating device
+    registerDevice(device: Interrupt): void {
+        this.devices.push(device);
+        this.log(`Device registered: ${device.deviceName} (IRQ: ${device.irqNum}, Priority: ${device.priority})`);
+    }
