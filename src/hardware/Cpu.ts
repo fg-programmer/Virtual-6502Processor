@@ -63,22 +63,36 @@ export class CPU extends Hardware {
         this.currentStep++;
     }
 
-
     private decode(): void {
+        this.log(`Decode: Opcode=${Hardware.hexLog(this.currentOpcode, 2)}`);
         switch (this.currentOpcode) {
             case 0xA9: // LDA #<constant>
-                this.log('Decoded LDA (Immediate)');
-                this.currentStep++; // Move to execute
+                this.accumulator = this.fetchByte();
+                this.updateZeroFlag(this.accumulator);
+                this.log(`LDA Immediate: Acc=${Hardware.hexLog(this.accumulator, 2)}`);
                 break;
-    
+
             case 0xAD: // LDA $<low-byte> $<high-byte>
-                this.log('Decoded LDA (Absolute)');
-                this.currentStep++; 
+                const ldaAddr = this.fetchAddress();
+                this.mmu.setMAR(ldaAddr);
+                this.mmu.read();
+                this.accumulator = parseInt(this.mmu.getMDR(), 16);
+                this.updateZeroFlag(this.accumulator);
+                this.log(`LDA Absolute: Addr=${Hardware.hexLog(ldaAddr, 4)}, Acc=${Hardware.hexLog(this.accumulator, 2)}`);
                 break;
-    
+
             case 0x8D: // STA $<low-byte> $<high-byte>
-                this.log('Decoded STA (Absolute)');
-                this.currentStep++; 
+                const staAddr = this.fetchAddress();
+                this.mmu.setMAR(staAddr);
+                this.mmu.setMDR(Hardware.hexLog(this.accumulator, 2));
+                this.mmu.write();
+                this.log(`STA Absolute: Addr=${Hardware.hexLog(staAddr, 4)}, Data=${Hardware.hexLog(this.accumulator, 2)}`);
+                break;
+
+            case 0xA2: // LDX #<constant>
+                this.xRegist = this.fetchByte();
+                this.updateZeroFlag(this.xRegist);
+                this.log(`LDX Immediate: X=${Hardware.hexLog(this.xRegist, 2)}`);
                 break;
     
             case 0x8A: // TXA
@@ -203,19 +217,6 @@ export class CPU extends Hardware {
         }
     }
 
-
-    case 0xA9: // LDA #<constant>
-    this.accumulator = parseInt(this.fetchOperand(), 16);
-    this.updateZeroFlag(this.accumulator);
-    this.log(`LDA #$${Hardware.hexLog(this.accumulator, 2)}`);
-    break;
-
-case 0xAD: // LDA $<low-byte> $<high-byte>
-    const ldaAddr = this.fetchAddress();
-    this.accumulator = this.readMemory(ldaAddr);
-    this.updateZeroFlag(this.accumulator);
-    this.log(`LDA $${Hardware.hexLog(ldaAddr, 4)} = ${Hardware.hexLog(this.accumulator, 2)}`);
-    break;
 
     
 }
