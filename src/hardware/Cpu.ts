@@ -30,7 +30,7 @@ export class CPU extends Hardware {
 
     // Increment the PC
     private incrementPC(): void {
-        this.pCounter = (this.pCounter + 1) & 0xFFFF; 
+        this.pCounter = (this.pCounter + 1) & 0xFFFF; // Wraps at 16-bit boundary
     }
 
 
@@ -324,6 +324,7 @@ export class CPU extends Hardware {
 
 
     private writeBack(): void {
+        private writeBack(): void {
             switch (this.currentOpcode) {
                 case 0xA9: // LDA #<constant>
                 case 0xAD: // LDA $<low-byte> $<high-byte>

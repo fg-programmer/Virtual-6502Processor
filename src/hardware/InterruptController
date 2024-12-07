@@ -1,40 +1,33 @@
 import { Hardware } from './Hardware';
-class InterruptController extends Hardware {
-    private devices: Interrupt[] = []; // Registered interrupt-generating devices
-    private interruptQueue: Interrupt[] = []; // Active interrupts waiting to be processed
+import { Interrupt } from './Interrupt';
 
-    constructor(id: number, name: string) {
-        super(id, name);
+
+class InterruptController extends Hardware {
+    private interruptQueue: Interrupt[] = []; // Queue to hold interrupts
+    private activeInterrupt?: Interrupt;      // Currently active interrupt
+
+    // Accept an interrupt from a device and add it to the queue
+    acceptInterrupt(device: Interrupt): void {
+        this.interruptQueue.push(device);
+        this.log(`Interrupt from ${device.name} accepted. IRQ: ${device.irqNum}`);
+        this.processInterrupts();
     }
 
-
-
-    // Register an interrupt-generating device
-    registerDevice(device: Interrupt): void {
-        this.devices.push(device);
-        this.log(`Device registered: ${device.deviceName} (IRQ: ${device.irqNum}, Priority: ${device.priority})`);
-    }    
-        // Add an interrupt to the queue
-        addInterrupt(device: Interrupt): void {
-            this.interruptQueue.push(device);
+    // Process the highest priority interrupt in the queue
+    private processInterrupts(): void {
+        if (this.interruptQueue.length > 0) {
+            // Sort by priority (lower number indicates higher priority)
             this.interruptQueue.sort((a, b) => a.priority - b.priority);
-            this.log(`Interrupt added: ${device.deviceName} (IRQ: ${device.irqNum})`);
-        }
-    
-        // Provide the highest-priority interrupt to the CPU
-        getNextInterrupt(): Interrupt | undefined {
-            return this.interruptQueue.shift(); 
-        }
-    
-        // Simulate handling interrupts each clock cycle
-        clockCycle(): void {
-            if (this.interruptQueue.length > 0) {
-                const interrupt = this.getNextInterrupt();
-                if (interrupt) {
-                    this.log(`Handling interrupt: ${interrupt.deviceName} (IRQ: ${interrupt.irqNum})`);
-                }
-            } else {
-                this.log("No interrupts to handle");
+            this.activeInterrupt = this.interruptQueue.shift(); // Get and remove the highest priority interrupt
+            if (this.activeInterrupt) {
+                this.log(`Processing interrupt from ${this.activeInterrupt.name}`);
+                this.activeInterrupt.triggerInterrupt();
             }
         }
     }
+
+    // Method to get the current active interrupt
+    getActiveInterrupt(): Interrupt | undefined {
+        return this.activeInterrupt;
+    }
+}
