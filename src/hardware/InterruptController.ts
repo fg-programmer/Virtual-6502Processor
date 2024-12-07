@@ -2,14 +2,14 @@ import { Hardware } from './Hardware';
 import { Interrupt } from './Interrupt';
 
 
-class InterruptController extends Hardware {
+export class InterruptController extends Hardware {
     private interruptQueue: Interrupt[] = []; // Queue to hold interrupts
     private activeInterrupt?: Interrupt;      // Currently active interrupt
 
     // Accept an interrupt from a device and add it to the queue
     acceptInterrupt(device: Interrupt): void {
         this.interruptQueue.push(device);
-        this.log(`Interrupt from ${device.name} accepted. IRQ: ${device.irqNum}`);
+        this.log(`Interrupt from ${device.deviceName} accepted. IRQ: ${device.irqNum}`);
         this.processInterrupts();
     }
 
@@ -20,7 +20,7 @@ class InterruptController extends Hardware {
             this.interruptQueue.sort((a, b) => a.priority - b.priority);
             this.activeInterrupt = this.interruptQueue.shift(); // Get and remove the highest priority interrupt
             if (this.activeInterrupt) {
-                this.log(`Processing interrupt from ${this.activeInterrupt.name}`);
+                this.log(`Processing interrupt from ${this.activeInterrupt.deviceName}`);
                 this.activeInterrupt.triggerInterrupt();
             }
         }

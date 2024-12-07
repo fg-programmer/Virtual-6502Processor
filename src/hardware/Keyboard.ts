@@ -6,13 +6,13 @@ import { InterruptController } from './InterruptController'
 class Keyboard extends Hardware implements Interrupt {
     irqNum: number;
     priority: number;
-    name: string;
+    deviceName: string;
     inputBuffer: string[] = [];
     outputBuffer: string[] = [];
     private interruptController: InterruptController;
 
     constructor(irqNum: number, priority: number, interruptController: InterruptController) {
-        super();
+        super(1, 'Input Device: ');;
         this.irqNum = irqNum;
         this.priority = priority;
         this.name = "Keyboard";

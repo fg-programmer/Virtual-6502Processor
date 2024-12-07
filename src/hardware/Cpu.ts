@@ -324,7 +324,6 @@ export class CPU extends Hardware {
 
 
     private writeBack(): void {
-        private writeBack(): void {
             switch (this.currentOpcode) {
                 case 0xA9: // LDA #<constant>
                 case 0xAD: // LDA $<low-byte> $<high-byte>
